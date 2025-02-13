@@ -1,7 +1,8 @@
 import os
+import json
 from dotenv import load_dotenv
 
-# Load environment variables from the .env file (if you need any other env vars)
+# Load environment variables from the .env file (if present)
 load_dotenv()
 
 from flask import (
@@ -24,20 +25,15 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'mov', 'avi', 'mkv', '
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# === Firebase Initialization with Embedded Credentials ===
-firebase_creds = {
-    "type": "service_account",
-    "project_id": "chat-775-3df66",
-    "private_key_id": "14727a9e1fe7cbbfd39a88f4226a08d3daa38bed",
-    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC3bTlogxwz5R0b\nlFn+Ifp94ee03NclyiUs+h5tPnxriWnq80g4tx0qZFkaFOeZ7bEGk132EZYtIbxL\n/1Ts8up+BZA8/fizrc/y3kvfcFV44x7oVIbCrlT3oczoXxhObAGaOMPGbQ0IqvYC\nlVUfe8SOgEtln4ojLA/ATBMX/QYdEnMpC58gg8jA5+ihwAGK368D7BkVvn41zMYh\nESwP5vFXcyZQ5XcUbqcX8WrfMYDLB3JyG24FrAc1ra5VO2wlHG0e5jtegrpNfFvC\nSSYCTkHDij9nVfgm7vuOyxtwxHCvE/h/P4yfOMk+mEXToYcnHmMDOcc2acO5tNQX\nGnXDOkkFAgMBAAECggEAAUNCuxSf++l5Xv279YhqruArFgR+hKzqFEUFMu+pr/HV\nEAAsa0YzcLMae+1QlNoyjEmKbY28cMNuhkAT58JaWT4U5UlC+OBa8fXpeXh5Vijg\nxxesin2PFISsIki5TvI7u+yPyHdquLhjPixPVt/6v+0OgnzBLjHOSp7GHjWoi52t\nu269KixFtVmuVWgx9P3hdzcRpD+noQjcldM/9G9pKm+KhGkJ60SkY7h4BrL1G/og\n9f9fwXY50RYZOtosXqfAc2Dm0OzfC3O8Vi31meKk/pdlyooQ0EGP2DCA9rPHmtB0\nzvrneK6wpWQEzxOOh2LS1sWcOhU0287zjPsPb4iDIQKBgQDxLYleONk2/tIGivTb\nGgAor7cMSUCxX+DLglnwu38cEnZSf05pPlQ3JFU1By9Eqb///KSFq9T3d2j6X+GK\nyRh8wG/hpFpz0LBzPQHvFBsGIIuagzDeko5IT4tWWO3dwd8jdj7Q1Kfk3JbHBX7l\nd2SR0/PKS2ru6HSXforptDSk9QKBgQDCsxW6GUGqFmjnzs9LN4+7bDVSCF/8S/Mx\nXUXHSEhIu0V7zU17LIFVjMx9bqrd4Zfd0XrUlZ5ZzaL/pFweXAp/qaJncYQelbLH\nL4ZSidEjSwL3ZEX/xMYFkbSSMTvfeYNZkDYZLUy1zwuwrxkdan1y2DQdb1YOx7Zv\nInmPUMcJ0QKBgQDHXYwjbjzpAEZfkDiOcfTVrUNUja1Dsu0hbbSpkmSlsQFMet43\nk4WMO6WP+0twqB4GHzNlKEEY/AW0itPnpQpv/ae+z9zRxh5GdJUHrAgWzYp5hJ8+\nLcoeLlsRWtvup5esOc/9Uv0i69Jb3MgkKcjh32K0xBk2OsQ+gyWTwRqPjQKBgFVF\nl+t0qlSzEekMo69euz2ry8KM1nUqUm25WxlHqBjqpCjvptKekFqGmv0Inh8lcZz9\n5Rz8FmlgbdYnBw1o5FQ7WFyT0/iNOcqRHvRBVe5uKPNu4FV/ufawdPReScm7b3Kn\nfXoTY/hwoL8WQRqoDB9jX5fQrlE02Mrdv32sNDAxAoGBAOBFu/PBIwNc6CGaD0PH\neEOJGP4NEmGCw0EpWpxafq+Ujtx9BaMw+tGnG8rvFc6EY4OfxTWzFIICEP96gBMB\nhbVp6ghpW6PVZskNeQNP9GtQhWwMU9/sZvBoCerUyw38eWrbnTBnDmYg/R9CMFnY\noE8SzMciACBFWvpWUhie+jK+\n-----END PRIVATE KEY-----\n",
-    "client_email": "firebase-adminsdk-fbsvc@chat-775-3df66.iam.gserviceaccount.com",
-    "client_id": "113138351792368259292",
-    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-    "token_uri": "https://oauth2.googleapis.com/token",
-    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40chat-775-3df66.iam.gserviceaccount.com",
-    "universe_domain": "googleapis.com"
-}
+# === Firebase Initialization Using Environment Variable ===
+# Instead of embedding the private key, load the entire JSON from an env variable.
+firebase_key_json = os.environ.get("FIREBASE_KEY_JSON")
+if not firebase_key_json:
+    raise Exception("FIREBASE_KEY_JSON environment variable not found. Please set it with your Firebase service account JSON.")
+try:
+    firebase_creds = json.loads(firebase_key_json)
+except json.JSONDecodeError as e:
+    raise Exception("Invalid JSON in FIREBASE_KEY_JSON environment variable: " + str(e))
 
 cred = credentials.Certificate(firebase_creds)
 firebase_admin.initialize_app(cred)
@@ -94,7 +90,7 @@ def register_api():
         })
         return jsonify({"message": "User registered", "uid": user.uid}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": "Registration error: " + str(e)}), 400
 
 # Get registered users (for dynamic contacts list)
 @app.route('/api/users', methods=['GET'])
@@ -150,7 +146,6 @@ def set_active():
 def send_message():
     data = request.get_json()
     chat_id = data.get("chatId", "default_chat")
-    # Add seen status fields: default seen false, no seen_time
     message = {
         "senderId": data.get("senderId"),
         "text": data.get("text", ""),
@@ -167,7 +162,7 @@ def send_message():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# Mark a message as seen (new endpoint)
+# Mark a message as seen
 @app.route('/api/mark_seen', methods=['POST'])
 def mark_seen():
     data = request.get_json()
