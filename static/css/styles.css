@@ -15,6 +15,10 @@ body {
 .navbar {
   background-color: var(--tertiary-color) !important;
 }
+.nav-logo{
+  border-radius: 50px;
+  background-color: aqua;
+}
 
 .card {
   border: none;
