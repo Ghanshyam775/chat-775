@@ -13,29 +13,23 @@
 </head>
 <body>
   <div class="container d-flex flex-column justify-content-center align-items-center min-vh-100">
-    <div class="card p-4 shadow" style="width: 100%; max-width: 400px;">
+    <div class="card p-4 shadow" style="max-width: 400px; width: 100%;">
       <h3 class="card-title text-center mb-3" style="color: var(--quaternary-color);">Register</h3>
       <form id="registerForm" novalidate>
         <div class="mb-3">
           <label for="registerUsername" class="form-label">Username</label>
           <input type="text" class="form-control" id="registerUsername" placeholder="Enter username" required>
-          <div class="invalid-feedback">
-            Please enter a username.
-          </div>
+          <div class="invalid-feedback">Please enter a username.</div>
         </div>
         <div class="mb-3">
           <label for="registerEmail" class="form-label">Email address</label>
           <input type="email" class="form-control" id="registerEmail" placeholder="Enter email" required>
-          <div class="invalid-feedback">
-            Please enter a valid email.
-          </div>
+          <div class="invalid-feedback">Please enter a valid email.</div>
         </div>
         <div class="mb-3">
           <label for="registerPassword" class="form-label">Password</label>
           <input type="password" class="form-control" id="registerPassword" placeholder="Password" required>
-          <div class="invalid-feedback">
-            Please enter a password.
-          </div>
+          <div class="invalid-feedback">Please enter a password.</div>
         </div>
         <div class="d-grid mb-3">
           <button type="submit" class="btn btn-primary">Register</button>
@@ -48,13 +42,16 @@
     </div>
   </div>
 
-  <!-- Bootstrap Bundle JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- Firebase and Registration Script -->
+  <!-- Firebase SDK Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase Config -->
   <script src="{{ url_for('static', filename='js/firebase-config.js') }}"></script>
+  <!-- Registration Script -->
   <script>
     (function () {
-      'use strict'
+      'use strict';
       const form = document.getElementById('registerForm');
       form.addEventListener('submit', function (event) {
         if (!form.checkValidity()) {
@@ -75,7 +72,7 @@
             if (data.error) {
               alert("Registration error: " + data.error);
             } else {
-              alert("Registration successful. Redirecting to login page.");
+              alert("Registration successful. Please login.");
               window.location.href = "{{ url_for('login') }}";
             }
           })
@@ -87,5 +84,7 @@
       });
     })();
   </script>
+  <!-- Bootstrap Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

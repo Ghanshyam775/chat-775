@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Account - Chat App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body>
+  <nav class="navbar" style="background-color: var(--tertiary-color);">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#"><img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="img-fluid" style="max-height: 40px;"></a>
+      <a class="btn btn-outline-light btn-sm" href="{{ url_for('chat') }}"><i class="bi bi-chat-dots"></i> Chat</a>
+    </div>
+  </nav>
+  <div class="container mt-4">
+    <h2 style="color: var(--quaternary-color);">Account Settings</h2>
+    <form id="accountForm" novalidate>
+      <div class="mb-3">
+        <label for="accountUsername" class="form-label">Username</label>
+        <input type="text" class="form-control" id="accountUsername" placeholder="Enter new username" required>
+        <div class="invalid-feedback">Please enter a username.</div>
+      </div>
+      <div class="mb-3">
+        <label for="profileImage" class="form-label">Profile Image</label>
+        <input type="file" class="form-control" id="profileImage" accept="image/*">
+      </div>
+      <div class="mb-3">
+        <img id="currentProfile" src="" alt="Profile Image" class="img-thumbnail" style="max-width: 150px; display: none;">
+      </div>
+      <button type="submit" class="btn btn-primary">Update Account</button>
+    </form>
+  </div>
+
+  <!-- Firebase SDK Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase Config -->
+  <script src="{{ url_for('static', filename='js/firebase-config.js') }}"></script>
+  <!-- Account Page Script -->
+  <script>
+    (function () {
+      'use strict';
+      const form = document.getElementById('accountForm');
+      const profileInput = document.getElementById('profileImage');
+      const currentProfile = document.getElementById('currentProfile');
+      let profileImageUrl = "";
+
+      // Request user info and display current profile image
+      firebase.auth().onAuthStateChanged(user => {
+        if (user) {
+          fetch("/api/users")
+            .then(response => response.json())
+            .then(data => {
+              const currentUser = data.find(u => u.uid === user.uid);
+              if (currentUser && currentUser.profile_image_url) {
+                currentProfile.src = currentUser.profile_image_url;
+                currentProfile.style.display = "block";
+              }
+              document.getElementById('accountUsername').value = currentUser ? currentUser.username : "";
+            })
+            .catch(error => console.error("Error fetching user info:", error));
+        } else {
+          window.location.href = "login";
+        }
+      });
+
+      // Preview the selected image
+      profileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            currentProfile.src = e.target.result;
+            currentProfile.style.display = 'block';
+          }
+          reader.readAsDataURL(file);
+        }
+      });
+
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (!form.checkValidity()) {
+          event.stopPropagation();
+          form.classList.add('was-validated');
+          return;
+        }
+        const username = document.getElementById('accountUsername').value;
+        if (profileInput.files.length > 0) {
+          const file = profileInput.files[0];
+          const formData = new FormData();
+          formData.append('file', file);
+          fetch("/api/upload", {
+            method: "POST",
+            body: formData
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.error) {
+              alert("Upload error: " + data.error);
+            } else {
+              profileImageUrl = data.file_url;
+              updateAccount(username, profileImageUrl);
+            }
+          })
+          .catch(error => alert("Upload error: " + error.message));
+        } else {
+          updateAccount(username, profileImageUrl);
+        }
+      });
+
+      function updateAccount(username, imageUrl) {
+        const uid = firebase.auth().currentUser.uid;
+        fetch("/api/account/update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uid: uid, username: username, profile_image_url: imageUrl })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            alert("Account update error: " + data.error);
+          } else {
+            alert("Account updated successfully!");
+          }
+        })
+        .catch(error => alert("Account update error: " + error.message));
+      }
+    })();
+  </script>
+  <!-- Bootstrap Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,86 +1,94 @@
 /* Custom color palette */
 :root {
-    --primary-color: #62161e;
-    --secondary-color: #720033;
-    --tertiary-color: #69007d;
-    --quaternary-color: #212ba9;
-  }
-  
-  /* Use Apple system font with fallbacks */
-  body {
-    background-color: #f9f9f9;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  }
-  
-  .navbar {
-    background-color: var(--tertiary-color) !important;
-  }
-  
-  .card {
-    border: none;
-    border-radius: 8px;
-  }
-  
-  .btn-primary {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
-  }
-  
-  .btn-secondary {
-    background-color: var(--secondary-color);
-    border-color: var(--secondary-color);
-  }
-  
-  .btn-outline-primary {
-    color: var(--primary-color);
-    border-color: var(--primary-color);
-  }
-  
-  .btn-outline-light {
-    color: #fff;
-    border-color: #fff;
-  }
-  
-  #contactsSidebar .card-header {
-    background-color: var(--quaternary-color);
-    color: #fff;
-  }
-  
-  .chat-window {
-    height: 450px;
-    overflow-y: auto;
-    background-color: #fff;
-    padding: 15px;
-    border: 1px solid #eaeaea;
-    border-radius: 5px;
-  }
-  
-  .message-card {
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 8px;
-    background-color: #e7f3ff;
-  }
-  
-  .message-card.you {
-    background-color: #d1ffd6;
-    text-align: right;
-  }
-  
-  .message-actions button {
-    border: none;
-    background: none;
-    padding: 0 5px;
-    cursor: pointer;
-  }
-  
-  .message-actions button:hover {
-    color: var(--primary-color);
-  }
-  
-  /* Toast styles */
-  .toast {
-    background-color: var(--primary-color);
-    color: #fff;
-  }
-  
+  --primary-color: #62161e;
+  --secondary-color: #720033;
+  --tertiary-color: #69007d;
+  --quaternary-color: #212ba9;
+}
+
+/* Apple system font with fallbacks */
+body {
+  background-color: #f9f9f9;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.navbar {
+  background-color: var(--tertiary-color) !important;
+}
+
+.card {
+  border: none;
+  border-radius: 8px;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-secondary {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+.btn-outline-primary {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-outline-light {
+  color: #fff;
+  border-color: #fff;
+}
+
+#contactsSidebar .card-header {
+  background-color: var(--quaternary-color);
+  color: #fff;
+}
+
+.chat-window {
+  height: 450px;
+  overflow-y: auto;
+  background-color: #fff;
+  padding: 15px;
+  border: 1px solid #eaeaea;
+  border-radius: 5px;
+}
+
+.message-card {
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  background-color: #e7f3ff;
+}
+
+.message-card.you {
+  background-color: #d1ffd6;
+  text-align: right;
+}
+
+.message-actions button {
+  border: none;
+  background: none;
+  padding: 0 5px;
+  cursor: pointer;
+}
+
+.message-actions button:hover {
+  color: var(--primary-color);
+}
+
+/* Contact image styling */
+.contact-img {
+  width: 30px;
+  height: 30px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+/* Toast styles */
+.toast {
+  background-color: var(--primary-color);
+  color: #fff;
+}
