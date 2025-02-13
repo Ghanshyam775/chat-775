@@ -25,17 +25,28 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'mov', 'avi', 'mkv', '
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# === Firebase Initialization Using Environment Variable ===
-# Instead of embedding the private key, load the entire JSON from an env variable.
+# === Firebase Initialization ===
+# Try to load the Firebase service account JSON from an environment variable.
 firebase_key_json = os.environ.get("FIREBASE_KEY_JSON")
-if not firebase_key_json:
-    raise Exception("FIREBASE_KEY_JSON environment variable not found. Please set it with your Firebase service account JSON.")
-try:
-    firebase_creds = json.loads(firebase_key_json)
-except json.JSONDecodeError as e:
-    raise Exception("Invalid JSON in FIREBASE_KEY_JSON environment variable: " + str(e))
 
-cred = credentials.Certificate(firebase_creds)
+if firebase_key_json:
+    try:
+        firebase_creds = json.loads(firebase_key_json)
+        # Ensure the private key is correctly formatted:
+        if "private_key" in firebase_creds:
+            firebase_creds["private_key"] = firebase_creds["private_key"].replace('\\n', '\n')
+        cred = credentials.Certificate(firebase_creds)
+    except json.JSONDecodeError as e:
+        raise Exception("Invalid JSON in FIREBASE_KEY_JSON environment variable: " + str(e))
+else:
+    # Fallback: use Application Default Credentials.
+    # Make sure the environment variable GOOGLE_APPLICATION_CREDENTIALS is set
+    # to the path of your Firebase service account JSON file.
+    try:
+        cred = credentials.ApplicationDefault()
+    except Exception as e:
+        raise Exception("No Firebase credentials found. Set FIREBASE_KEY_JSON or GOOGLE_APPLICATION_CREDENTIALS. " + str(e))
+
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
@@ -258,4 +269,6 @@ def upload_file():
         return jsonify({"error": "File type not allowed"}), 400
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=True, host='0.0.0.0', port=port)
+
