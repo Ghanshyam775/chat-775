@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Chat - Chat App</title>
+  <title>Chat</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -15,10 +15,17 @@
   <!-- Navigation Bar -->
   <nav class="navbar" style="background-color: var(--tertiary-color);">
     <div class="container-fluid">
-      <a class="navbar-brand" href="#" style="color: #fff;">Chat App</a>
+      <!-- Responsive Logo -->
+      <a class="navbar-brand" href="#">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="img-fluid" style="max-height: 40px;">
+      </a>
       <div>
-        <a class="btn btn-outline-light btn-sm me-2" href="{{ url_for('account') }}"><i class="bi bi-person-circle"></i> Account</a>
-        <button id="logoutBtn" class="btn btn-outline-light btn-sm"><i class="bi bi-box-arrow-right"></i> Logout</button>
+        <a class="btn btn-outline-light btn-sm me-2" href="{{ url_for('account') }}">
+          <i class="bi bi-person-circle"></i> Account
+        </a>
+        <button id="logoutBtn" class="btn btn-outline-light btn-sm">
+          <i class="bi bi-box-arrow-right"></i> Logout
+        </button>
       </div>
     </div>
   </nav>
@@ -46,9 +53,15 @@
               <span id="chatHeaderName">Chat</span>
             </div>
             <div>
-              <button id="deleteChatBtn" class="btn btn-outline-light btn-sm me-1" title="Delete Chat"><i class="bi bi-trash"></i></button>
-              <button id="voiceCallBtn" class="btn btn-outline-light btn-sm me-1" title="Voice Call"><i class="bi bi-telephone"></i></button>
-              <button id="videoCallBtn" class="btn btn-outline-light btn-sm" title="Video Call"><i class="bi bi-camera-video"></i></button>
+              <button id="deleteChatBtn" class="btn btn-outline-light btn-sm me-1" title="Delete Chat">
+                <i class="bi bi-trash"></i>
+              </button>
+              <button id="voiceCallBtn" class="btn btn-outline-light btn-sm me-1" title="Voice Call">
+                <i class="bi bi-telephone"></i>
+              </button>
+              <button id="videoCallBtn" class="btn btn-outline-light btn-sm" title="Video Call">
+                <i class="bi bi-camera-video"></i>
+              </button>
             </div>
           </div>
           <div id="messages" class="card-body chat-window">
@@ -57,9 +70,13 @@
           <div class="card-footer">
             <div class="input-group">
               <input type="file" id="mediaInput" accept="image/*,video/*" style="display:none;">
-              <button id="attachBtn" class="btn btn-outline-secondary"><i class="bi bi-paperclip"></i></button>
+              <button id="attachBtn" class="btn btn-outline-secondary">
+                <i class="bi bi-paperclip"></i>
+              </button>
               <input type="text" id="messageInput" class="form-control" placeholder="Type your message...">
-              <button id="sendBtn" class="btn" style="background-color: var(--primary-color); color: #fff;"><i class="bi bi-send-fill"></i></button>
+              <button id="sendBtn" class="btn" style="background-color: var(--primary-color); color: #fff;">
+                <i class="bi bi-send-fill"></i>
+              </button>
             </div>
           </div>
         </div>
