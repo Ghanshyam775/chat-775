@@ -3,6 +3,11 @@ from flask import (
     Flask, request, jsonify, render_template,
     redirect, url_for, send_from_directory
 )
+from dotenv import load_dotenv
+
+# Load environment variables from .env (for local testing)
+load_dotenv()
+
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
 from firebase_admin.firestore import SERVER_TIMESTAMP
@@ -21,13 +26,27 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # === Firebase Initialization ===
-# For deployment, set the environment variable FIREBASE_KEY_PATH to the secure absolute path.
-# If not set, it falls back to the default (assumes firebase_key.json is in templates folder).
-firebase_key_path = os.environ.get(
-    "FIREBASE_KEY_PATH",
-    os.path.join(os.getcwd(), "templates", "firebase_key.json")
-)
-cred = credentials.Certificate(firebase_key_path)
+# Read Firebase credentials from environment variables.
+firebase_creds = {
+    "type": os.environ.get("FIREBASE_TYPE"),
+    "project_id": os.environ.get("FIREBASE_PROJECT_ID"),
+    "private_key_id": os.environ.get("FIREBASE_PRIVATE_KEY_ID"),
+    # Convert literal "\n" sequences to actual newlines.
+    "private_key": os.environ.get("FIREBASE_PRIVATE_KEY").replace('\\n', '\n'),
+    "client_email": os.environ.get("FIREBASE_CLIENT_EMAIL"),
+    "client_id": os.environ.get("FIREBASE_CLIENT_ID"),
+    "auth_uri": os.environ.get("FIREBASE_AUTH_URI"),
+    "token_uri": os.environ.get("FIREBASE_TOKEN_URI"),
+    "auth_provider_x509_cert_url": os.environ.get("FIREBASE_AUTH_PROVIDER_X509_CERT_URL"),
+    "client_x509_cert_url": os.environ.get("FIREBASE_CLIENT_X509_CERT_URL"),
+    "universe_domain": os.environ.get("FIREBASE_UNIVERSE_DOMAIN")
+}
+
+try:
+    cred = credentials.Certificate(firebase_creds)
+except Exception as error:
+    raise ValueError('Failed to initialize a certificate credential. Caused by: "{}"'.format(error))
+
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
@@ -87,33 +106,19 @@ def register_api():
 # 2) Google Sign-In Endpoint
 @app.route('/api/google_signin', methods=['POST'])
 def google_signin():
-    """
-    Expects JSON: { "idToken": "<Google ID Token from front-end>" }
-
-    1. Verify the ID token using firebase_admin.auth.verify_id_token().
-    2. Extract the user's UID from the decoded token.
-    3. If the user doc doesn't exist in Firestore, create it with relevant info.
-    4. Return a success response with the user's UID or relevant data.
-    """
     data = request.get_json()
     id_token = data.get("idToken")
     if not id_token:
         return jsonify({"error": "Missing 'idToken'"}), 400
-
     try:
-        # 1) Verify the Google ID token
         decoded_token = auth.verify_id_token(id_token)
         uid = decoded_token["uid"]
         email = decoded_token.get("email")
         display_name = decoded_token.get("name", "")
         photo_url = decoded_token.get("picture", "")
-
-        # 2) Check if the user doc already exists in Firestore
         user_ref = db.collection("users").document(uid)
         user_doc = user_ref.get()
-
         if not user_doc.exists:
-            # 3) If it doesn't exist, create a new user doc
             user_data = {
                 "username": display_name,
                 "email": email,
@@ -122,18 +127,11 @@ def google_signin():
             }
             user_ref.set(user_data)
         else:
-            # (Optional) Update user doc with any new info from Google
             user_ref.update({
                 "username": display_name,
                 "profile_image_url": photo_url
             })
-
-        # 4) Return success with the user’s UID
-        return jsonify({
-            "message": "Google Sign-In success",
-            "uid": uid
-        }), 200
-
+        return jsonify({"message": "Google Sign-In success", "uid": uid}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
@@ -284,4 +282,6 @@ def upload_file():
         return jsonify({"error": "File type not allowed"}), 400
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Use the PORT environment variable (default to 5000) and host 0.0.0.0 for Render.
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=True, host="0.0.0.0", port=port)
