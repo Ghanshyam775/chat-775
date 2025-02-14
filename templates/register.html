@@ -13,23 +13,29 @@
 </head>
 <body>
   <div class="container d-flex flex-column justify-content-center align-items-center min-vh-100">
-    <div class="card p-4 shadow" style="max-width: 400px; width: 100%;">
+    <div class="card p-4 shadow" style="width: 100%; max-width: 400px;">
       <h3 class="card-title text-center mb-3" style="color: var(--quaternary-color);">Register</h3>
       <form id="registerForm" novalidate>
         <div class="mb-3">
           <label for="registerUsername" class="form-label">Username</label>
           <input type="text" class="form-control" id="registerUsername" placeholder="Enter username" required>
-          <div class="invalid-feedback">Please enter a username.</div>
+          <div class="invalid-feedback">
+            Please enter a username.
+          </div>
         </div>
         <div class="mb-3">
           <label for="registerEmail" class="form-label">Email address</label>
           <input type="email" class="form-control" id="registerEmail" placeholder="Enter email" required>
-          <div class="invalid-feedback">Please enter a valid email.</div>
+          <div class="invalid-feedback">
+            Please enter a valid email.
+          </div>
         </div>
         <div class="mb-3">
           <label for="registerPassword" class="form-label">Password</label>
           <input type="password" class="form-control" id="registerPassword" placeholder="Password" required>
-          <div class="invalid-feedback">Please enter a password.</div>
+          <div class="invalid-feedback">
+            Please enter a password.
+          </div>
         </div>
         <div class="d-grid mb-3">
           <button type="submit" class="btn btn-primary">Register</button>

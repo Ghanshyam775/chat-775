@@ -1,10 +1,4 @@
 import os
-import json
-from dotenv import load_dotenv
-
-# Load environment variables from the .env file (if present)
-load_dotenv()
-
 from flask import (
     Flask, request, jsonify, render_template,
     redirect, url_for, send_from_directory
@@ -23,30 +17,17 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'mov', 'avi', 'mkv', 'webm'}
 
 def allowed_file(filename):
+    """Check if the file extension is allowed."""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # === Firebase Initialization ===
-# Try to load the Firebase service account JSON from an environment variable.
-firebase_key_json = os.environ.get("FIREBASE_KEY_JSON")
-
-if firebase_key_json:
-    try:
-        firebase_creds = json.loads(firebase_key_json)
-        # Ensure the private key is correctly formatted:
-        if "private_key" in firebase_creds:
-            firebase_creds["private_key"] = firebase_creds["private_key"].replace('\\n', '\n')
-        cred = credentials.Certificate(firebase_creds)
-    except json.JSONDecodeError as e:
-        raise Exception("Invalid JSON in FIREBASE_KEY_JSON environment variable: " + str(e))
-else:
-    # Fallback: use Application Default Credentials.
-    # Make sure the environment variable GOOGLE_APPLICATION_CREDENTIALS is set
-    # to the path of your Firebase service account JSON file.
-    try:
-        cred = credentials.ApplicationDefault()
-    except Exception as e:
-        raise Exception("No Firebase credentials found. Set FIREBASE_KEY_JSON or GOOGLE_APPLICATION_CREDENTIALS. " + str(e))
-
+# For deployment, set the environment variable FIREBASE_KEY_PATH to the secure absolute path.
+# If not set, it falls back to the default (assumes firebase_key.json is in templates folder).
+firebase_key_path = os.environ.get(
+    "FIREBASE_KEY_PATH",
+    os.path.join(os.getcwd(), "templates", "firebase_key.json")
+)
+cred = credentials.Certificate(firebase_key_path)
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
@@ -82,7 +63,7 @@ def uploaded_file(filename):
 
 # === API Endpoints ===
 
-# Register a new user (store extra info in Firestore)
+# 1) Register a new user (store extra info in Firestore)
 @app.route('/api/register', methods=['POST'])
 def register_api():
     data = request.get_json()
@@ -101,9 +82,62 @@ def register_api():
         })
         return jsonify({"message": "User registered", "uid": user.uid}), 200
     except Exception as e:
-        return jsonify({"error": "Registration error: " + str(e)}), 400
+        return jsonify({"error": str(e)}), 400
 
-# Get registered users (for dynamic contacts list)
+# 2) Google Sign-In Endpoint
+@app.route('/api/google_signin', methods=['POST'])
+def google_signin():
+    """
+    Expects JSON: { "idToken": "<Google ID Token from front-end>" }
+
+    1. Verify the ID token using firebase_admin.auth.verify_id_token().
+    2. Extract the user's UID from the decoded token.
+    3. If the user doc doesn't exist in Firestore, create it with relevant info.
+    4. Return a success response with the user's UID or relevant data.
+    """
+    data = request.get_json()
+    id_token = data.get("idToken")
+    if not id_token:
+        return jsonify({"error": "Missing 'idToken'"}), 400
+
+    try:
+        # 1) Verify the Google ID token
+        decoded_token = auth.verify_id_token(id_token)
+        uid = decoded_token["uid"]
+        email = decoded_token.get("email")
+        display_name = decoded_token.get("name", "")
+        photo_url = decoded_token.get("picture", "")
+
+        # 2) Check if the user doc already exists in Firestore
+        user_ref = db.collection("users").document(uid)
+        user_doc = user_ref.get()
+
+        if not user_doc.exists:
+            # 3) If it doesn't exist, create a new user doc
+            user_data = {
+                "username": display_name,
+                "email": email,
+                "profile_image_url": photo_url,
+                "active": True
+            }
+            user_ref.set(user_data)
+        else:
+            # (Optional) Update user doc with any new info from Google
+            user_ref.update({
+                "username": display_name,
+                "profile_image_url": photo_url
+            })
+
+        # 4) Return success with the user’s UID
+        return jsonify({
+            "message": "Google Sign-In success",
+            "uid": uid
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+# 3) Get registered users (for dynamic contacts list)
 @app.route('/api/users', methods=['GET'])
 def get_users():
     try:
@@ -118,7 +152,7 @@ def get_users():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# Update account information (username and profile image URL)
+# 4) Update account information (username and profile image URL)
 @app.route('/api/account/update', methods=['POST'])
 def account_update():
     data = request.get_json()
@@ -136,7 +170,7 @@ def account_update():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# Set active status for a user (true/false)
+# 5) Set active status for a user (true/false)
 @app.route('/api/set_active', methods=['POST'])
 def set_active():
     data = request.get_json()
@@ -152,7 +186,7 @@ def set_active():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# Send a message (text and/or media)
+# 6) Send a message (text and/or media)
 @app.route('/api/send', methods=['POST'])
 def send_message():
     data = request.get_json()
@@ -163,9 +197,7 @@ def send_message():
         "media_url": data.get("media_url", ""),
         "timestamp": SERVER_TIMESTAMP,
         "deleted": False,
-        "reactions": {},
-        "seen": False,
-        "seen_time": None
+        "reactions": {}
     }
     try:
         db.collection("chats").document(chat_id).collection("messages").add(message)
@@ -173,24 +205,7 @@ def send_message():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# Mark a message as seen
-@app.route('/api/mark_seen', methods=['POST'])
-def mark_seen():
-    data = request.get_json()
-    chat_id = data.get("chatId", "default_chat")
-    message_id = data.get("messageId")
-    if not chat_id or not message_id:
-        return jsonify({"error": "Missing chatId or messageId"}), 400
-    try:
-        db.collection("chats").document(chat_id).collection("messages").document(message_id).update({
-            "seen": True,
-            "seen_time": SERVER_TIMESTAMP
-        })
-        return jsonify({"message": "Message marked as seen"}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-
-# Delete a single message (soft-delete)
+# 7) Delete a single message (soft-delete)
 @app.route('/api/delete', methods=['POST'])
 def delete_message():
     data = request.get_json()
@@ -202,7 +217,7 @@ def delete_message():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# Delete entire chat (all messages)
+# 8) Delete entire chat (all messages)
 @app.route('/api/delete_chat', methods=['POST'])
 def delete_chat():
     data = request.get_json()
@@ -217,13 +232,13 @@ def delete_chat():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# Forward a message
+# 9) Forward a message
 @app.route('/api/forward', methods=['POST'])
 def forward_message():
     data = request.get_json()
     original_chat_id = data.get("originalChatId", "default_chat")
     message_id = data.get("messageId")
-    target_chat_id = data.get("target_chat_id", "default_chat")
+    target_chat_id = data.get("targetChatId", "default_chat")
     try:
         orig_message = db.collection("chats").document(original_chat_id).collection("messages").document(message_id).get().to_dict()
         if not orig_message:
@@ -235,7 +250,7 @@ def forward_message():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# React to a message (update the reactions map)
+# 10) React to a message (update the reactions map)
 @app.route('/api/react', methods=['POST'])
 def react_message():
     data = request.get_json()
@@ -251,7 +266,7 @@ def react_message():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# Upload media file (for profile images or chat attachments)
+# 11) Upload media file (for profile images or chat attachments)
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
@@ -269,6 +284,4 @@ def upload_file():
         return jsonify({"error": "File type not allowed"}), 400
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(debug=True, host='0.0.0.0', port=port)
-
+    app.run(debug=True)

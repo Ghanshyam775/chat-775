@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", function() {
   let currentChatContact = null;
   let usersMap = {}; // Map from uid to user object (including username and profile_image_url)
 
-  // Request notification permission
+  // Request Notification permission (for desktop notifications)
   if ("Notification" in window && Notification.permission !== "granted") {
     Notification.requestPermission();
   }
@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", function() {
   firebase.auth().onAuthStateChanged(user => {
     if (user) {
       currentUser = user;
+      // Optionally, update active status here via /api/set_active.
       loadContacts();
     } else {
       window.location.href = "login";
@@ -61,6 +62,7 @@ document.addEventListener("DOMContentLoaded", function() {
       const li = document.createElement("li");
       li.className = "list-group-item list-group-item-action";
       li.style.cursor = "pointer";
+      // Use profile_image_url if available, otherwise a default image
       const imgSrc = user.profile_image_url || "https://via.placeholder.com/30";
       li.innerHTML = `<img src="${imgSrc}" class="contact-img" alt="Profile"> ${user.username}`;
       li.setAttribute("data-uid", user.uid);
@@ -105,14 +107,8 @@ document.addEventListener("DOMContentLoaded", function() {
           if (message.deleted) return;
           const messageElem = document.createElement("div");
           messageElem.className = "message-card mb-2 " + (message.senderId === currentUser.uid ? "you" : "");
-          let profileImgHtml = "";
-          if (usersMap[message.senderId] && usersMap[message.senderId].profile_image_url) {
-              profileImgHtml = `<img src="${usersMap[message.senderId].profile_image_url}" class="contact-img" alt="Profile"> `;
-          } else {
-              profileImgHtml = `<img src="https://via.placeholder.com/30" class="contact-img" alt="Profile"> `;
-          }
           const senderName = message.senderId === currentUser.uid ? "You" : (usersMap[message.senderId]?.username || "Unknown");
-          let contentHtml = `${profileImgHtml}<strong>${senderName}:</strong> `;
+          let contentHtml = `<strong>${senderName}:</strong> `;
           if (message.text) contentHtml += message.text;
           if (message.media_url) {
             contentHtml += `<br><img src="${message.media_url}" alt="Media" class="img-fluid" style="max-width:200px;">`;
@@ -125,7 +121,7 @@ document.addEventListener("DOMContentLoaded", function() {
             </div>`;
           messageElem.innerHTML = contentHtml;
           messagesDiv.appendChild(messageElem);
-          // Show desktop notification if document is hidden and message is not from current user
+          // If the browser is hidden and message is not from the current user, show desktop notification
           if (document.hidden && message.senderId !== currentUser.uid) {
             showDesktopNotification(`${senderName}: ${message.text}`);
           }
@@ -262,6 +258,7 @@ document.addEventListener("DOMContentLoaded", function() {
     if ("Notification" in window && Notification.permission === "granted") {
       new Notification("New Message", { body: message });
     } else {
+      // Fallback: show toast if desktop notification not available
       showToast(message);
     }
   }

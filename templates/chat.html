@@ -12,12 +12,10 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
-  <!-- Navigation Bar with Logo -->
+  <!-- Navigation Bar -->
   <nav class="navbar" style="background-color: var(--tertiary-color);">
     <div class="container-fluid">
-      <a class="navbar-brand" href="#">
-        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="img-fluid nav-logo" style="max-height: 40px;">
-      </a>
+      <a class="navbar-brand" href="#" style="color: #fff;">Chat App</a>
       <div>
         <a class="btn btn-outline-light btn-sm me-2" href="{{ url_for('account') }}"><i class="bi bi-person-circle"></i> Account</a>
         <button id="logoutBtn" class="btn btn-outline-light btn-sm"><i class="bi bi-box-arrow-right"></i> Logout</button>
@@ -28,7 +26,7 @@
   <!-- Main Container -->
   <div class="container-fluid mt-3">
     <div class="row">
-      <!-- Contacts Sidebar with Profile Images -->
+      <!-- Contacts Sidebar -->
       <div class="col-md-3 col-sm-4" id="contactsSidebar">
         <div class="card">
           <div class="card-header" style="background-color: var(--quaternary-color); color: #fff;">
